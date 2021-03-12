@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <!-- https://blog.csdn.net/qingzhizhenhun/article/details/84565494 -->
+    <!-- https://juejin.cn/post/6844903671793188878#heading-2 -->
+    <div id="app">
+        <div>
+            <button @click="onStart">开始</button>
+            <button @click="onStop">结束</button>
+
+        </div>
+        <div>
+            <video :src="url" controls></video>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                message: 'Hello Vue!',
+                chunks: [],
+                chunkList: [],
+                btnText: '按住拍视频',
+                index: 0
+            },
+            methods: {
+                onStart() {
+                    this.showVideo(true);
+                    this.onPreview();
+                    this.recorder.start();
+                },
+                onStop() {
+                    this.recorder.stop();
+                },
+                requestMediaAccess() {
+                    //获取用户媒体权限，视频的话参数{audio: true, video: true}
+                    navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: true
+                    }).then(stream => {
+                        //创建媒体录制对象
+                        this.recorder = new window.MediaRecorder(stream);
+                        this.bindEvents();
+                    }, error => {
+                        alert('出错，请确保已允许浏览器获取录音权限');
+                    });
+                },
+                bindEvents() {
+                    this.recorder.ondataavailable = this.getRecordingData;
+                    this.recorder.onstop = this.saveRecordingData;
+                },
+                getRecordingData(e) {
+                    //录制的数据
+                    this.chunks.push(e.data);
+                },
+                saveRecordingData() {
+                    let blob = new Blob(this.chunks, {
+                            'type': 'video/webm'
+                        }),
+                        videoStream = URL.createObjectURL(blob);
+                    this.chunkList.push({
+                        stream: videoStream
+                    });
+                    this.url = this.chunkList[0].stream
+                    this.chunks = [];
+                },
+            },
+            mounted() {
+                this.requestMediaAccess();
+            }
+        })
+    </script>
+</body>
+
+</html>
